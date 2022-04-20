@@ -1,0 +1,2 @@
+0 5  * * *  docker-compose -f /root/rocketchat/docker-compose.yaml up certbot 
+10 5 * * *  docker-compose -f /root/rocketchat/docker-compose.yaml exec nginx nginx -s reload

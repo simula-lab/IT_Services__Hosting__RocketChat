@@ -1,0 +1,68 @@
+version: "3"
+services:
+  rocketchat:
+    container_name: rocketchat
+    image: rocket.chat:latest
+    restart: unless-stopped
+    environment:
+     - PORT=3000
+     - ROOT_URL=https://chat.ahrar.party
+     - MONGO_URL=mongodb://mongo:27017/rocketchat
+     - MONGO_OPLOG_URL=mongodb://mongo:27017/local
+    depends_on:
+     - mongo
+  mongo:
+    container_name: mongo
+    image: mongo:latest
+    restart: unless-stopped
+    volumes:
+     - ./data/db:/data/db
+    command: mongod --oplogSize 128 --replSet rs0 
+    labels:
+      - "traefik.enable=false"
+
+  # this container's job is just run the command to initialize the replica set.
+  # it will run the command and remove himself (it will not stay running)
+  mongo-init-replica:
+    image: mongo:latest
+    command: >
+      bash -c
+        "for i in `seq 1 30`; do
+          mongo mongo/rocketchat --eval \"
+            rs.initiate({
+              _id: 'rs0',
+              members: [ { _id: 0, host: 'localhost:27017' } ]})\" &&
+          s=$$? && break || s=$$?;
+          echo \"Tried $$i times. Waiting 5 secs...\";
+          sleep 5;
+        done; (exit $$s)"
+    depends_on:
+      - mongo
+
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    restart: unless-stopped
+    environment:
+      - DOMAIN
+    depends_on:
+      - rocketchat 
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./etc/nginx/templates:/etc/nginx/templates:ro
+      - ./etc/letsencrypt:/etc/letsencrypt:ro
+      - ./certbot/data:/var/www/certbot
+  certbot:
+    container_name: certbot
+    image: certbot/certbot:latest
+    depends_on:
+      - nginx
+    command: >-
+             certonly --reinstall --webroot --webroot-path=/var/www/certbot
+             --email ${EMAIL} --agree-tos --no-eff-email
+             -d ${DOMAIN}
+    volumes:
+      - ./etc/letsencrypt:/etc/letsencrypt
+      - ./certbot/data:/var/www/certbot
