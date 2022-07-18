@@ -6,7 +6,7 @@ services:
     restart: unless-stopped
     environment:
      - PORT=3000
-     - ROOT_URL=${ROOT_URL}
+     - ROOT_URL=https://${DOMAIN}
      - MONGO_URL=mongodb://mongo:27017/rocketchat
      - MONGO_OPLOG_URL=mongodb://mongo:27017/local
     depends_on:
