@@ -6,7 +6,7 @@ services:
     restart: unless-stopped
     environment:
      - PORT=3000
-     - ROOT_URL=https://chat.ahrar.party
+     - ROOT_URL=${ROOT_URL}
      - MONGO_URL=mongodb://mongo:27017/rocketchat
      - MONGO_OPLOG_URL=mongodb://mongo:27017/local
     depends_on:
