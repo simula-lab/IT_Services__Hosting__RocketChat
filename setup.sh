@@ -18,3 +18,6 @@ openssl dhparam -out etc/letsencrypt/ssl-dhparams.pem 2048
 # Phase 2
 crontab ./etc/crontab
 docker-compose -f ./docker-compose.yaml up -d
+
+# cleanup
+docker rm $(docker ps -a | grep Exited | awk '{print $1}')
