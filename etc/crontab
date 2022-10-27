@@ -1,1 +1,1 @@
-10 5 * * * /root/rocketchat/cron_job.sh 
+0 5  * * *  /root/rocketchat/cron_job.sh
