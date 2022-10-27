@@ -2,7 +2,7 @@ version: "3"
 services:
   rocketchat:
     container_name: rocketchat
-    image: rocket.chat:latest
+    image: rocket.chat:${RELEASE:-latest}
     restart: unless-stopped
     environment:
      - PORT=3000
