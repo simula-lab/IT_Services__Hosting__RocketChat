@@ -13,4 +13,4 @@ readonly SCRIPT_NAME=$(basename $0)
 DOCKER_CERTBOT_OUTPUT="$(docker-compose -f /root/rocketchat/docker-compose.yaml run --rm certbot)"
 printf "$DOCKER_CERTBOT_OUTPUT" 
 docker-compose -f /root/rocketchat/docker-compose.yaml exec nginx nginx -s reload
-printf "$DOCKER_CERTBOT_OUTPUT" | logger -p user.notice -t $SCRIPT_NAME
+printf "$DOCKER_CERTBOT_OUTPUT" | tr -d '\r' | logger -p user.notice -t $SCRIPT_NAME
