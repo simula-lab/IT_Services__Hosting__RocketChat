@@ -28,14 +28,21 @@ services:
     command: >
       bash -c
         "for i in `seq 1 30`; do
-          mongo mongo/rocketchat --eval \"
+            msg=$$(mongosh mongo/rocketchat --quiet --eval \"
             rs.initiate({
               _id: 'rs0',
-              members: [ { _id: 0, host: 'localhost:27017' } ]})\" &&
-          s=$$? && break || s=$$?;
+              members: [ { _id: 0, host: 'mongo:27017' } ]})\" 2>&1)
+            s=$$?
+            if [ \"$$s\" -eq 0 ]; then
+              break
+            fi
+            if [[ \"$$msg\" == \"MongoServerError: already initialized\" ]] ; then
+              echo $$msg
+              break
+            fi
           echo \"Tried $$i times. Waiting 5 secs...\";
           sleep 5;
-        done; (exit $$s)"
+        done; (exit 0)"
     depends_on:
       - mongo
 
