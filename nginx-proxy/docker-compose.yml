@@ -1,0 +1,64 @@
+---
+services:
+  rocketchat:
+    container_name: rocketchat
+    image: rocketchat/rocket.chat:${RELEASE:-latest}
+    # image: rocket.chat:${RELEASE:-latest}
+    restart: unless-stopped
+    environment:
+     - PORT=3000
+     - ROOT_URL=https://${DOMAIN}
+     - MONGO_URL=mongodb://mongo:27017/rocketchat
+     - MONGO_OPLOG_URL=mongodb://mongo:27017/local
+     - VIRTUAL_HOST=${DOMAIN}
+     - LETSENCRYPT_HOST=${DOMAIN}
+     - LETSENCRYPT_EMAIL=${EMAIL}       
+    depends_on:
+     - mongo
+    networks:
+     - rocketchat
+     - backend       
+  mongo:
+    container_name: mongo
+    image: mongo:${MONGO_VERSION:-latest}
+    restart: unless-stopped
+    volumes:
+     - ./data/db:/data/db
+    command: mongod --oplogSize 128 --replSet rs0 
+    labels:
+      - "traefik.enable=false"
+    networks:
+      - rocketchat
+
+  # this container's job is just run the command to initialize the replica set.
+  # it will run the command and remove himself (it will not stay running)
+  mongo-init-replica:
+    image: mongo:${MONGO_VERSION:-latest}
+    command: >
+      bash -c
+        "for i in `seq 1 30`; do
+            msg=$$(mongosh mongo/rocketchat --quiet --eval \"
+            rs.initiate({
+              _id: 'rs0',
+              members: [ { _id: 0, host: 'mongo:27017' } ]})\" 2>&1)
+            s=$$?
+            if [ \"$$s\" -eq 0 ]; then
+              break
+            fi
+            if [[ \"$$msg\" == \"MongoServerError: already initialized\" ]] ; then
+              echo $$msg
+              break
+            fi
+          echo \"Tried $$i times. Waiting 5 secs...\";
+          sleep 5;
+        done; (exit 0)"
+    depends_on:
+      - mongo
+    networks:
+      - rocketchat
+
+networks:
+  rocketchat:
+  backend:
+    external: true
+    name: http-proxy_backend
