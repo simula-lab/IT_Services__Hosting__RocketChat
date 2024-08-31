@@ -17,7 +17,7 @@ services:
      - mongo
     networks:
      - rocketchat
-     - backend       
+     - proxy       
   mongo:
     container_name: mongo
     image: mongo:${MONGO_VERSION:-latest}
@@ -59,6 +59,6 @@ services:
 
 networks:
   rocketchat:
-  backend:
+  proxy:
     external: true
-    name: http-proxy_backend
+    name: http-proxy_proxy
